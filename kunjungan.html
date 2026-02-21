@@ -8,315 +8,164 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg: #0e1117;
-      --surface: #161b25;
-      --surface2: #1e2535;
-      --border: #2a3347;
-      --accent: #7a9e7e;
-      --accent2: #a8c5ac;
-      --text: #e8edf5;
-      --muted: #8a96ab;
-      --danger: #e07070;
-      --gold: #d4a96a;
+      --bg: #0e1117; --surface: #161b25; --surface2: #1e2535;
+      --border: #2a3347; --accent: #7a9e7e; --accent2: #a8c5ac;
+      --text: #e8edf5; --muted: #8a96ab; --gold: #d4a96a;
     }
+    body { font-family: 'Instrument Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-    body {
-      font-family: 'Instrument Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
-
-    /* ── Header ── */
     header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 20px 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 100;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 18px 32px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
     }
-    .logo {
-      font-family: 'Syne', sans-serif;
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-    }
+    .logo { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
     .logo span { color: var(--accent); }
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 16px;
+    .header-right { display: flex; align-items: center; gap: 14px; }
+    .period-label {
+      background: var(--surface2); border: 1px solid var(--border);
+      padding: 6px 14px; border-radius: 20px; font-size: 13px; color: var(--muted);
     }
-    .date-badge {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-    .date-badge strong { color: var(--text); }
+    .period-label strong { color: var(--text); font-size: 12px; }
     .btn-refresh {
-      background: var(--accent);
-      color: white;
-      border: none;
-      padding: 8px 18px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      font-family: inherit;
-      transition: background 0.2s, transform 0.15s;
+      background: var(--accent); color: white; border: none;
+      padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 500;
+      cursor: pointer; font-family: inherit; transition: background 0.2s, transform 0.15s;
       display: flex; align-items: center; gap: 6px;
     }
     .btn-refresh:hover { background: #6a8e6e; transform: translateY(-1px); }
-    .btn-refresh.loading { opacity: 0.7; pointer-events: none; }
+    .btn-refresh.loading { opacity: 0.6; pointer-events: none; }
 
-    /* ── Main ── */
-    main {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 32px 24px;
+    main { max-width: 1200px; margin: 0 auto; padding: 28px 24px; }
+
+    /* Period bar */
+    .period-bar {
+      display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+      margin-bottom: 26px;
     }
+    .period-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+    .ptab {
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--muted); padding: 8px 15px; border-radius: 10px;
+      font-size: 13px; font-family: inherit; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .ptab:hover { border-color: var(--accent); color: var(--text); }
+    .ptab.active { background: var(--accent); border-color: var(--accent); color: white; font-weight: 500; }
 
-    /* ── Summary Cards ── */
+    .custom-wrap {
+      display: none; align-items: center; gap: 8px;
+      background: var(--surface); border: 1px solid var(--border);
+      padding: 7px 12px; border-radius: 10px; flex-wrap: wrap;
+    }
+    .custom-wrap.show { display: flex; }
+    .custom-wrap input[type="date"] {
+      background: transparent; border: none; color: var(--text);
+      font-size: 13px; font-family: inherit; outline: none; cursor: pointer;
+    }
+    .custom-wrap input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.6); cursor: pointer; }
+    .custom-wrap span { color: var(--muted); font-size: 12px; }
+    .btn-go {
+      background: var(--accent); color: white; border: none;
+      padding: 5px 12px; border-radius: 7px; font-size: 12px;
+      font-family: inherit; cursor: pointer;
+    }
+    .btn-go:hover { background: #6a8e6e; }
+    .last-update { font-size: 11px; color: var(--muted); white-space: nowrap; margin-left: auto; }
+
+    /* Summary cards */
     .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      margin-bottom: 32px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px; margin-bottom: 26px;
     }
     .stat-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px;
-      position: relative;
-      overflow: hidden;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 22px; position: relative; overflow: hidden;
       animation: fadeUp 0.5s ease both;
     }
     .stat-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
-      border-radius: 16px 16px 0 0;
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 3px; border-radius: 16px 16px 0 0;
     }
     .stat-card.green::before  { background: var(--accent); }
     .stat-card.blue::before   { background: #6ab0d4; }
     .stat-card.gold::before   { background: var(--gold); }
     .stat-card.purple::before { background: #a085d4; }
+    .stat-icon { font-size: 26px; margin-bottom: 10px; }
+    .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 5px; }
+    .stat-value { font-family: 'Syne', sans-serif; font-size: 34px; font-weight: 800; line-height: 1; }
+    .stat-sub { font-size: 11px; color: var(--muted); margin-top: 5px; }
 
-    .stat-icon { font-size: 28px; margin-bottom: 12px; }
-    .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 6px; }
-    .stat-value { font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 800; line-height: 1; }
-    .stat-sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
-
-    /* ── Grid dua kolom ── */
-    .two-col {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-      margin-bottom: 24px;
-    }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 22px; }
     @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } }
 
-    /* ── Panel ── */
     .panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      overflow: hidden;
-      animation: fadeUp 0.5s ease both;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden; animation: fadeUp 0.5s ease both;
     }
     .panel-header {
-      padding: 18px 24px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      padding: 15px 22px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
     }
-    .panel-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 15px;
-      font-weight: 700;
-    }
-    .panel-body { padding: 20px 24px; }
-
-    /* ── Filter bar ── */
-    .filter-bar {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-      align-items: center;
-    }
-    .filter-bar select,
-    .filter-bar input {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 8px 14px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .filter-bar select:focus,
-    .filter-bar input:focus { border-color: var(--accent); }
-    .filter-bar label { font-size: 13px; color: var(--muted); }
-
-    /* ── Chart ── */
+    .panel-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; }
+    .panel-body { padding: 18px 22px; }
     .chart-wrap { position: relative; height: 220px; }
 
-    /* ── Table ── */
+    .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+    .filter-bar select {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); padding: 7px 12px; border-radius: 9px;
+      font-size: 13px; font-family: inherit; outline: none;
+    }
+    .filter-bar select:focus { border-color: var(--accent); }
+    .filter-bar label { font-size: 12px; color: var(--muted); }
+
     .tbl-wrap { overflow-x: auto; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
     thead th {
-      text-align: left;
-      padding: 10px 14px;
-      font-family: 'Syne', sans-serif;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--muted);
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
+      text-align: left; padding: 9px 12px;
+      font-family: 'Syne', sans-serif; font-size: 10px;
+      text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
+      border-bottom: 1px solid var(--border); white-space: nowrap;
     }
-    tbody tr {
-      border-bottom: 1px solid #1a2030;
-      transition: background 0.15s;
-    }
+    tbody tr { border-bottom: 1px solid #1a2030; transition: background 0.15s; }
     tbody tr:hover { background: var(--surface2); }
-    tbody td {
-      padding: 12px 14px;
-      vertical-align: middle;
-    }
-    .badge {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 500;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-    }
+    tbody td { padding: 10px 12px; vertical-align: middle; }
+
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; background: var(--surface2); border: 1px solid var(--border); }
     .badge-green { background: rgba(122,158,126,0.15); border-color: var(--accent); color: var(--accent2); }
+    .badge-date  { background: rgba(106,176,212,0.1); border-color: #6ab0d4; color: #a0d0e8; font-family: monospace; font-size: 10px; }
+
     .clicks-pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 28px; height: 28px;
-      border-radius: 50%;
-      font-weight: 700;
-      font-size: 12px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 50%; font-weight: 700; font-size: 12px;
+      background: var(--surface2); border: 1px solid var(--border);
     }
     .clicks-pill.hot { background: rgba(212,169,106,0.15); border-color: var(--gold); color: var(--gold); }
 
-    /* ── Empty / loading states ── */
-    .empty-state {
-      text-align: center;
-      padding: 48px 24px;
-      color: var(--muted);
-    }
-    .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-state { text-align: center; padding: 44px 24px; color: var(--muted); }
+    .empty-icon { font-size: 36px; margin-bottom: 10px; }
+
     .skeleton {
       background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.2s infinite;
-      border-radius: 8px;
-      height: 18px;
-      margin: 6px 0;
+      background-size: 200% 100%; animation: shimmer 1.2s infinite;
+      border-radius: 8px; height: 18px; margin: 6px 0;
     }
     @keyframes shimmer { to { background-position: -200% 0; } }
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* ── UUID chip ── */
     .uuid-chip {
-      font-family: monospace;
-      font-size: 11px;
-      color: var(--muted);
-      max-width: 120px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      display: inline-block;
+      font-family: monospace; font-size: 11px; color: var(--muted);
+      max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;
     }
-
-    /* ── Pagination ── */
-    .pagination {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      justify-content: flex-end;
-      margin-top: 16px;
-      font-size: 13px;
-    }
+    .pagination { display: flex; align-items: center; gap: 8px; justify-content: flex-end; margin-top: 14px; font-size: 13px; }
     .pagination button {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 5px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: inherit;
-      font-size: 13px;
-      transition: background 0.15s;
+      background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+      padding: 5px 12px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 13px; transition: background 0.15s;
     }
     .pagination button:hover:not(:disabled) { background: var(--border); }
     .pagination button:disabled { opacity: 0.4; cursor: default; }
-    .pagination .page-info { color: var(--muted); }
-
-    /* ── Tanggal filter ── */
-    .date-filter {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-    .date-filter label { font-size: 13px; color: var(--muted); }
-    .date-filter input[type="date"] {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 8px 14px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-family: inherit;
-      outline: none;
-    }
-    .date-filter input[type="date"]:focus { border-color: var(--accent); }
-    .btn-today {
-      background: transparent;
-      border: 1px solid var(--accent);
-      color: var(--accent);
-      padding: 8px 14px;
-      border-radius: 10px;
-      font-size: 12px;
-      cursor: pointer;
-      font-family: inherit;
-      transition: background 0.15s;
-    }
-    .btn-today:hover { background: rgba(122,158,126,0.1); }
-
-    .last-update { font-size: 11px; color: var(--muted); }
+    .page-info { color: var(--muted); }
   </style>
 </head>
 <body>
@@ -324,7 +173,7 @@
 <header>
   <div class="logo">Lidan <span>Psikologi</span> · Dashboard</div>
   <div class="header-right">
-    <div class="date-badge">Hari ini: <strong id="headerDate">—</strong></div>
+    <div class="period-label">Periode: <strong id="headerPeriod">—</strong></div>
     <button class="btn-refresh" id="btnRefresh" onclick="loadAll()">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
@@ -337,11 +186,22 @@
 
 <main>
 
-  <!-- Date Filter -->
-  <div class="date-filter">
-    <label>Tampilkan tanggal:</label>
-    <input type="date" id="dateFilter" />
-    <button class="btn-today" onclick="setToday()">Hari ini</button>
+  <!-- Period Tabs -->
+  <div class="period-bar">
+    <div class="period-tabs">
+      <button class="ptab active" data-p="today"     onclick="setPeriod('today')">Hari Ini</button>
+      <button class="ptab"        data-p="week"      onclick="setPeriod('week')">Minggu Ini</button>
+      <button class="ptab"        data-p="lastweek"  onclick="setPeriod('lastweek')">Minggu Lalu</button>
+      <button class="ptab"        data-p="month"     onclick="setPeriod('month')">Bulan Ini</button>
+      <button class="ptab"        data-p="lastmonth" onclick="setPeriod('lastmonth')">Bulan Lalu</button>
+      <button class="ptab"        data-p="custom"    onclick="setPeriod('custom')">📅 Pilih Tanggal</button>
+    </div>
+    <div class="custom-wrap" id="customWrap">
+      <input type="date" id="dateFrom" />
+      <span>s/d</span>
+      <input type="date" id="dateTo" />
+      <button class="btn-go" onclick="loadAll()">Tampilkan</button>
+    </div>
     <span class="last-update" id="lastUpdate"></span>
   </div>
 
@@ -351,7 +211,7 @@
       <div class="stat-icon">👤</div>
       <div class="stat-label">Pengunjung Unik</div>
       <div class="stat-value" id="statUniq">—</div>
-      <div class="stat-sub">UUID berbeda hari ini</div>
+      <div class="stat-sub" id="statUniqSub">UUID berbeda</div>
     </div>
     <div class="stat-card blue" style="animation-delay:0.05s">
       <div class="stat-icon">👆</div>
@@ -373,26 +233,22 @@
     </div>
   </div>
 
-  <!-- Charts Row -->
+  <!-- Charts -->
   <div class="two-col">
     <div class="panel" style="animation-delay:0.2s">
       <div class="panel-header">
         <span class="panel-title">Kunjungan per Layanan</span>
       </div>
       <div class="panel-body">
-        <div class="chart-wrap">
-          <canvas id="chartLayanan"></canvas>
-        </div>
+        <div class="chart-wrap"><canvas id="chartLayanan"></canvas></div>
       </div>
     </div>
     <div class="panel" style="animation-delay:0.25s">
       <div class="panel-header">
-        <span class="panel-title">Distribusi Klik per Pengunjung</span>
+        <span class="panel-title" id="chart2Title">Distribusi Klik</span>
       </div>
       <div class="panel-body">
-        <div class="chart-wrap">
-          <canvas id="chartKlik"></canvas>
-        </div>
+        <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
       </div>
     </div>
   </div>
@@ -404,12 +260,10 @@
       <span class="last-update" id="totalRows"></span>
     </div>
     <div class="panel-body">
-
-      <!-- Filter bar -->
       <div class="filter-bar">
-        <label>Filter layanan:</label>
+        <label>Layanan:</label>
         <select id="filterSlug" onchange="renderTable()">
-          <option value="">Semua layanan</option>
+          <option value="">Semua</option>
         </select>
         <label>Min. klik:</label>
         <select id="filterMinKlik" onchange="renderTable()">
@@ -420,9 +274,10 @@
         </select>
         <label>Urutkan:</label>
         <select id="sortBy" onchange="renderTable()">
+          <option value="tgl_desc">Tanggal (terbaru)</option>
           <option value="klik_desc">Klik (terbanyak)</option>
-          <option value="jam_desc">Jam (terbaru)</option>
-          <option value="jam_asc">Jam (terlama)</option>
+          <option value="tgl_asc">Tanggal (terlama)</option>
+          <option value="jam_desc">Jam terakhir (terbaru)</option>
         </select>
       </div>
 
@@ -431,8 +286,9 @@
           <thead>
             <tr>
               <th>#</th>
+              <th>Tanggal</th>
               <th>Layanan</th>
-              <th>Klik Hari Ini</th>
+              <th>Klik</th>
               <th>Jam Pertama</th>
               <th>Jam Terakhir</th>
               <th>UUID Pengunjung</th>
@@ -440,7 +296,7 @@
             </tr>
           </thead>
           <tbody id="tblBody">
-            <tr><td colspan="7"><div class="skeleton"></div><div class="skeleton" style="width:70%"></div></td></tr>
+            <tr><td colspan="8"><div class="skeleton"></div><div class="skeleton" style="width:70%"></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -451,72 +307,112 @@
 </main>
 
 <script>
-// ═══════════════════════════════════════════
+// ════════════════════════════════════════════
 const API_BASE   = "https://lidan-co-id.pages.dev/api/contacts_filter_dinamis7";
 const API_TABLE  = "qr_kunjungan";
 const API_SECRET = "admin";
-const PAGE_SIZE  = 20;
-// ═══════════════════════════════════════════
+const PAGE_SIZE  = 25;
+// ════════════════════════════════════════════
 
-let allData     = [];
+let allData      = [];
 let filteredData = [];
 let currentPage  = 1;
-let chartLayanan = null;
-let chartKlik    = null;
+let currentPeriod = 'today';
+let chartLayanan  = null;
+let chartTrend    = null;
 
-function todayStr() {
-  return new Date().toLocaleDateString('sv-SE');
+// ── Helpers ──
+const fmt    = d => d.toLocaleDateString('sv-SE');
+const apiHdr = () => ({ 'X-Custom-Auth': API_SECRET });
+
+function getDateRange(period) {
+  const now   = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  if (period === 'today') {
+    const s = fmt(today);
+    return { from: s, to: s, label: today.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) };
+  }
+  if (period === 'week') {
+    const mon = new Date(today); mon.setDate(today.getDate() - ((today.getDay()+6)%7));
+    const sun = new Date(mon);   sun.setDate(mon.getDate()+6);
+    return { from: fmt(mon), to: fmt(sun), label: `Minggu Ini  ${fmt(mon)} – ${fmt(sun)}` };
+  }
+  if (period === 'lastweek') {
+    const mon = new Date(today); mon.setDate(today.getDate() - ((today.getDay()+6)%7) - 7);
+    const sun = new Date(mon);   sun.setDate(mon.getDate()+6);
+    return { from: fmt(mon), to: fmt(sun), label: `Minggu Lalu  ${fmt(mon)} – ${fmt(sun)}` };
+  }
+  if (period === 'month') {
+    const from = new Date(today.getFullYear(), today.getMonth(), 1);
+    const to   = new Date(today.getFullYear(), today.getMonth()+1, 0);
+    return { from: fmt(from), to: fmt(to), label: `Bulan Ini  ${today.toLocaleDateString('id-ID',{month:'long',year:'numeric'})}` };
+  }
+  if (period === 'lastmonth') {
+    const from = new Date(today.getFullYear(), today.getMonth()-1, 1);
+    const to   = new Date(today.getFullYear(), today.getMonth(), 0);
+    return { from: fmt(from), to: fmt(to), label: `Bulan Lalu  ${from.toLocaleDateString('id-ID',{month:'long',year:'numeric'})}` };
+  }
+  if (period === 'custom') {
+    const from = document.getElementById('dateFrom').value;
+    const to   = document.getElementById('dateTo').value;
+    if (!from || !to) return null;
+    return { from, to, label: `${from}  s/d  ${to}` };
+  }
+  return null;
 }
 
-function apiHeaders() {
-  return { 'X-Custom-Auth': API_SECRET };
+function allDatesIn(from, to) {
+  const dates = []; let cur = new Date(from); const end = new Date(to);
+  while (cur <= end) { dates.push(fmt(cur)); cur.setDate(cur.getDate()+1); }
+  return dates;
 }
 
-function setToday() {
-  document.getElementById('dateFilter').value = todayStr();
-  loadAll();
-}
+// ── Period switch ──
+window.setPeriod = function(p) {
+  currentPeriod = p;
+  document.querySelectorAll('.ptab').forEach(b => b.classList.toggle('active', b.dataset.p === p));
+  document.getElementById('customWrap').classList.toggle('show', p === 'custom');
+  if (p !== 'custom') loadAll();
+};
 
-// Init
-document.addEventListener('DOMContentLoaded', () => {
-  const df = document.getElementById('dateFilter');
-  df.value = todayStr();
-  document.getElementById('headerDate').textContent = new Date().toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-  df.addEventListener('change', loadAll);
-  loadAll();
-});
-
+// ── Load data ──
 async function loadAll() {
-  const btn = document.getElementById('btnRefresh');
-  btn.classList.add('loading');
-  btn.textContent = '…';
+  const range = getDateRange(currentPeriod);
+  if (!range) return;
 
-  const date = document.getElementById('dateFilter').value || todayStr();
+  const btn = document.getElementById('btnRefresh');
+  btn.classList.add('loading'); btn.innerHTML = '…';
+  document.getElementById('headerPeriod').textContent = range.label;
 
   try {
-    const url = `${API_BASE}?table=${API_TABLE}&x_03_eq=${encodeURIComponent(date)}`;
-    const res  = await fetch(url, { headers: apiHeaders() });
-    const json = await res.json();
+    const dates = allDatesIn(range.from, range.to);
 
-    allData = (json.success && json.data) ? json.data : [];
-    document.getElementById('lastUpdate').textContent = 'Update: ' + new Date().toLocaleTimeString('id-ID');
-
-    // Update header date label
-    if (date === todayStr()) {
-      document.getElementById('headerDate').textContent = new Date().toLocaleDateString('id-ID', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+    let combined = [];
+    if (dates.length === 1) {
+      const res  = await fetch(`${API_BASE}?table=${API_TABLE}&x_03_eq=${encodeURIComponent(dates[0])}`, { headers: apiHdr() });
+      const json = await res.json();
+      combined   = json.success ? json.data : [];
     } else {
-      const d = new Date(date);
-      document.getElementById('headerDate').textContent = d.toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
+      // Fetch paralel semua hari dalam range
+      const results = await Promise.all(
+        dates.map(d =>
+          fetch(`${API_BASE}?table=${API_TABLE}&x_03_eq=${encodeURIComponent(d)}`, { headers: apiHdr() })
+            .then(r => r.json()).then(j => j.success ? j.data : []).catch(() => [])
+        )
+      );
+      combined = results.flat();
     }
 
+    allData = combined;
+    document.getElementById('lastUpdate').textContent = 'Update: ' + new Date().toLocaleTimeString('id-ID');
+
     buildFilterOptions();
-    updateStats();
-    renderCharts();
+    updateStats(range);
+    renderCharts(range);
     renderTable();
 
-  } catch (e) {
-    console.error(e);
-  }
+  } catch(e) { console.error(e); }
 
   btn.classList.remove('loading');
   btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Refresh`;
@@ -526,52 +422,44 @@ function buildFilterOptions() {
   const slugs = [...new Set(allData.map(r => r.x_02).filter(Boolean))].sort();
   const sel   = document.getElementById('filterSlug');
   const prev  = sel.value;
-  sel.innerHTML = '<option value="">Semua layanan</option>';
+  sel.innerHTML = '<option value="">Semua</option>';
   slugs.forEach(s => {
-    const opt = document.createElement('option');
-    opt.value = s; opt.textContent = s;
-    if (s === prev) opt.selected = true;
-    sel.appendChild(opt);
+    const o = document.createElement('option');
+    o.value = s; o.textContent = s;
+    if (s === prev) o.selected = true;
+    sel.appendChild(o);
   });
 }
 
-function updateStats() {
-  const uniqs   = new Set(allData.map(r => r.x_01)).size;
+function updateStats(range) {
+  const uniqs     = new Set(allData.map(r => r.x_01)).size;
   const totalKlik = allData.reduce((a, r) => a + parseInt(r.x_06 || 0), 0);
-  const pages   = new Set(allData.map(r => r.x_02)).size;
-  const avg     = uniqs > 0 ? (totalKlik / uniqs).toFixed(1) : '0';
+  const pages     = new Set(allData.map(r => r.x_02)).size;
+  const avg       = uniqs > 0 ? (totalKlik / uniqs).toFixed(1) : '0';
 
-  document.getElementById('statUniq').textContent   = uniqs;
-  document.getElementById('statClicks').textContent = totalKlik;
-  document.getElementById('statPages').textContent  = pages;
-  document.getElementById('statAvg').textContent    = avg;
+  document.getElementById('statUniq').textContent    = uniqs;
+  document.getElementById('statClicks').textContent  = totalKlik;
+  document.getElementById('statPages').textContent   = pages;
+  document.getElementById('statAvg').textContent     = avg;
+  document.getElementById('statUniqSub').textContent = range.from !== range.to ? 'UUID unik dalam periode' : 'UUID berbeda hari ini';
 }
 
+// ── Charts ──
 const COLORS = ['#7a9e7e','#6ab0d4','#d4a96a','#a085d4','#e07070','#70c5b0','#d4706a','#8ac5e0'];
 
-function renderCharts() {
-  // ── Chart 1: kunjungan per layanan (bar) ──
+function renderCharts(range) {
+  // Chart 1 — per layanan
   const slugCount = {};
   allData.forEach(r => {
-    const slug = r.x_02 || 'unknown';
-    slugCount[slug] = (slugCount[slug] || 0) + parseInt(r.x_06 || 1);
+    const s = r.x_02 || '?';
+    slugCount[s] = (slugCount[s] || 0) + parseInt(r.x_06 || 1);
   });
-  const slugLabels = Object.keys(slugCount);
-  const slugValues = slugLabels.map(k => slugCount[k]);
-
   if (chartLayanan) chartLayanan.destroy();
-  const ctx1 = document.getElementById('chartLayanan').getContext('2d');
-  chartLayanan = new Chart(ctx1, {
+  chartLayanan = new Chart(document.getElementById('chartLayanan').getContext('2d'), {
     type: 'bar',
     data: {
-      labels: slugLabels,
-      datasets: [{
-        label: 'Total Klik',
-        data: slugValues,
-        backgroundColor: COLORS.slice(0, slugLabels.length),
-        borderRadius: 8,
-        borderSkipped: false,
-      }]
+      labels: Object.keys(slugCount),
+      datasets: [{ label: 'Total Klik', data: Object.values(slugCount), backgroundColor: COLORS, borderRadius: 8, borderSkipped: false }]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
@@ -583,42 +471,58 @@ function renderCharts() {
     }
   });
 
-  // ── Chart 2: distribusi klik (doughnut) ──
-  const klikDist = { '1 klik': 0, '2 klik': 0, '3-5 klik': 0, '>5 klik': 0 };
-  allData.forEach(r => {
-    const k = parseInt(r.x_06 || 1);
-    if      (k === 1)  klikDist['1 klik']++;
-    else if (k === 2)  klikDist['2 klik']++;
-    else if (k <= 5)   klikDist['3-5 klik']++;
-    else               klikDist['>5 klik']++;
-  });
+  // Chart 2 — tren harian (multi hari) atau distribusi klik (hari tunggal)
+  const isMulti = range.from !== range.to;
+  document.getElementById('chart2Title').textContent = isMulti ? 'Tren Kunjungan per Hari' : 'Distribusi Klik per Pengunjung';
+  if (chartTrend) chartTrend.destroy();
 
-  if (chartKlik) chartKlik.destroy();
-  const ctx2 = document.getElementById('chartKlik').getContext('2d');
-  chartKlik = new Chart(ctx2, {
-    type: 'doughnut',
-    data: {
-      labels: Object.keys(klikDist),
-      datasets: [{
-        data: Object.values(klikDist),
-        backgroundColor: ['#7a9e7e','#6ab0d4','#d4a96a','#a085d4'],
-        borderWidth: 0,
-        hoverOffset: 6
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      cutout: '65%',
-      plugins: {
-        legend: {
-          position: 'right',
-          labels: { color: '#8a96ab', font: { size: 11 }, boxWidth: 12, padding: 14 }
+  if (isMulti) {
+    const dates = allDatesIn(range.from, range.to);
+    const perDay = Object.fromEntries(dates.map(d => [d, 0]));
+    allData.forEach(r => { if (r.x_03 in perDay) perDay[r.x_03] += parseInt(r.x_06 || 1); });
+    const shortLabels = dates.map(d => new Date(d).toLocaleDateString('id-ID',{day:'numeric',month:'short'}));
+
+    chartTrend = new Chart(document.getElementById('chartTrend').getContext('2d'), {
+      type: 'line',
+      data: {
+        labels: shortLabels,
+        datasets: [{
+          label: 'Klik', data: dates.map(d => perDay[d]),
+          borderColor: '#7a9e7e', backgroundColor: 'rgba(122,158,126,0.12)',
+          borderWidth: 2.5, pointBackgroundColor: '#7a9e7e', pointRadius: 4,
+          tension: 0.35, fill: true
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#8a96ab', font: { size: 10 }, maxRotation: 45 }, grid: { color: '#1e2535' } },
+          y: { ticks: { color: '#8a96ab', font: { size: 11 } }, grid: { color: '#1e2535' }, beginAtZero: true }
         }
       }
-    }
-  });
+    });
+  } else {
+    const dist = { '1×': 0, '2×': 0, '3–5×': 0, '>5×': 0 };
+    allData.forEach(r => {
+      const k = parseInt(r.x_06 || 1);
+      if (k===1) dist['1×']++; else if(k===2) dist['2×']++; else if(k<=5) dist['3–5×']++; else dist['>5×']++;
+    });
+    chartTrend = new Chart(document.getElementById('chartTrend').getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(dist),
+        datasets: [{ data: Object.values(dist), backgroundColor: ['#7a9e7e','#6ab0d4','#d4a96a','#a085d4'], borderWidth: 0, hoverOffset: 6 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '65%',
+        plugins: { legend: { position: 'right', labels: { color: '#8a96ab', font: { size: 11 }, boxWidth: 12, padding: 14 } } }
+      }
+    });
+  }
 }
 
+// ── Table ──
 function getFiltered() {
   const slug    = document.getElementById('filterSlug').value;
   const minKlik = parseInt(document.getElementById('filterMinKlik').value) || 1;
@@ -631,65 +535,47 @@ function getFiltered() {
   });
 
   rows.sort((a, b) => {
-    if (sort === 'klik_desc') return parseInt(b.x_06 || 1) - parseInt(a.x_06 || 1);
-    if (sort === 'jam_desc')  return (b.x_05 || '').localeCompare(a.x_05 || '');
-    if (sort === 'jam_asc')   return (a.x_04 || '').localeCompare(b.x_04 || '');
+    if (sort === 'klik_desc') return parseInt(b.x_06||1) - parseInt(a.x_06||1);
+    if (sort === 'tgl_desc')  return (b.x_03||'').localeCompare(a.x_03||'') || (b.x_05||'').localeCompare(a.x_05||'');
+    if (sort === 'tgl_asc')   return (a.x_03||'').localeCompare(b.x_03||'') || (a.x_04||'').localeCompare(b.x_04||'');
+    if (sort === 'jam_desc')  return (b.x_05||'').localeCompare(a.x_05||'');
     return 0;
   });
-
   return rows;
 }
 
-function renderTable() {
-  filteredData = getFiltered();
-  currentPage  = 1;
-  renderPage();
-}
+function renderTable() { filteredData = getFiltered(); currentPage = 1; renderPage(); }
 
 function renderPage() {
   const tbody = document.getElementById('tblBody');
   document.getElementById('totalRows').textContent = `${filteredData.length} baris`;
 
-  if (filteredData.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7">
-      <div class="empty-state">
-        <div class="empty-icon">📭</div>
-        <div>Belum ada kunjungan untuk filter ini</div>
-      </div>
-    </td></tr>`;
+  if (!filteredData.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📭</div><div>Belum ada data untuk periode ini</div></div></td></tr>`;
     document.getElementById('pagination').innerHTML = '';
     return;
   }
 
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const slice = filteredData.slice(start, start + PAGE_SIZE);
+  const start      = (currentPage-1) * PAGE_SIZE;
+  const slice      = filteredData.slice(start, start+PAGE_SIZE);
   const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
 
   tbody.innerHTML = slice.map((r, i) => {
-    const no     = start + i + 1;
-    const slug   = r.x_02 || '—';
-    const clicks = parseInt(r.x_06 || 1);
-    const jamAwal = r.x_04 || '—';
-    const jamAkhir = r.x_05 || '—';
-    const uuid   = r.x_01 || '—';
-    const ref    = r.x_09 || '—';
-    const hot    = clicks >= 3;
-
+    const clicks = parseInt(r.x_06||1);
     return `<tr>
-      <td style="color:var(--muted)">${no}</td>
-      <td><span class="badge badge-green">${slug}</span></td>
-      <td><span class="clicks-pill ${hot ? 'hot' : ''}" title="${clicks} klik">${clicks}</span></td>
-      <td>${jamAwal}</td>
-      <td>${jamAkhir}</td>
-      <td><span class="uuid-chip" title="${uuid}">${uuid}</span></td>
-      <td style="color:var(--muted);font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${ref}">${ref}</td>
+      <td style="color:var(--muted)">${start+i+1}</td>
+      <td><span class="badge badge-date">${r.x_03||'—'}</span></td>
+      <td><span class="badge badge-green">${r.x_02||'—'}</span></td>
+      <td><span class="clicks-pill ${clicks>=3?'hot':''}" title="${clicks} klik">${clicks}</span></td>
+      <td>${r.x_04||'—'}</td>
+      <td>${r.x_05||'—'}</td>
+      <td><span class="uuid-chip" title="${r.x_01||''}">${r.x_01||'—'}</span></td>
+      <td style="color:var(--muted);font-size:11px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.x_09||''}">${r.x_09||'—'}</td>
     </tr>`;
   }).join('');
 
-  // Pagination
   const pg = document.getElementById('pagination');
   if (totalPages <= 1) { pg.innerHTML = ''; return; }
-
   pg.innerHTML = `
     <button onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹ Prev</button>
     <span class="page-info">${currentPage} / ${totalPages}</span>
@@ -698,10 +584,17 @@ function renderPage() {
 }
 
 window.goPage = function(p) {
-  currentPage = p;
-  renderPage();
-  document.querySelector('.panel:last-child').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  currentPage = p; renderPage();
+  document.querySelector('.panel:last-child').scrollIntoView({behavior:'smooth',block:'start'});
 };
+
+// ── Init ──
+document.addEventListener('DOMContentLoaded', () => {
+  const t = new Date().toLocaleDateString('sv-SE');
+  document.getElementById('dateFrom').value = t;
+  document.getElementById('dateTo').value   = t;
+  loadAll();
+});
 </script>
 </body>
 </html>
