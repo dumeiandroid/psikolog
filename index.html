@@ -7,7 +7,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
       --sage: #7a9e7e;
       --cream: #f5f0e8;
@@ -15,7 +14,6 @@
       --charcoal: #2c2c2c;
       --muted: #7a7066;
     }
-
     body {
       font-family: 'DM Sans', sans-serif;
       background: var(--cream);
@@ -26,7 +24,6 @@
       justify-content: center;
       overflow: hidden;
     }
-
     body::before {
       content: '';
       position: fixed;
@@ -45,7 +42,6 @@
       bottom: -80px; left: -80px;
       pointer-events: none;
     }
-
     .card {
       background: white;
       border-radius: 24px;
@@ -56,12 +52,10 @@
       box-shadow: 0 4px 40px rgba(44,44,44,0.08);
       animation: rise 0.6s cubic-bezier(0.22,1,0.36,1) both;
     }
-
     @keyframes rise {
       from { opacity: 0; transform: translateY(28px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-
     .icon-wrap {
       width: 72px; height: 72px;
       border-radius: 50%;
@@ -70,7 +64,6 @@
       margin: 0 auto 24px;
       font-size: 32px;
     }
-
     .label {
       font-size: 11px;
       letter-spacing: 2px;
@@ -79,7 +72,6 @@
       font-weight: 500;
       margin-bottom: 10px;
     }
-
     h1 {
       font-family: 'Playfair Display', serif;
       font-size: 26px;
@@ -87,14 +79,12 @@
       line-height: 1.3;
       margin-bottom: 14px;
     }
-
     p.desc {
       font-size: 14.5px;
       color: var(--muted);
       line-height: 1.7;
       margin-bottom: 32px;
     }
-
     .btn-wa {
       display: inline-flex;
       align-items: center;
@@ -108,14 +98,17 @@
       font-weight: 500;
       transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
       box-shadow: 0 4px 20px rgba(122,158,126,0.35);
+      cursor: pointer;
+      border: none;
+      font-family: inherit;
     }
     .btn-wa:hover {
       background: #6a8e6e;
       transform: translateY(-2px);
       box-shadow: 0 8px 28px rgba(122,158,126,0.4);
     }
-
     .note { margin-top: 20px; font-size: 12px; color: #bbb; }
+    .countdown { font-weight: 600; color: var(--sage); }
 
     .state-error .icon-wrap { background: #fce8e8; }
     .state-error h1 { color: #b94a4a; }
@@ -136,20 +129,25 @@
       justify-content: center; margin-top: 14px;
     }
     .page-list a {
-      background: #f0f0f0;
-      color: var(--charcoal);
-      padding: 5px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      text-decoration: none;
-      font-family: monospace;
-      transition: background 0.15s;
+      background: #f0f0f0; color: var(--charcoal);
+      padding: 5px 12px; border-radius: 20px;
+      font-size: 12px; text-decoration: none;
+      font-family: monospace; transition: background 0.15s;
     }
     .page-list a:hover { background: var(--warm); }
+
+    .track-status {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 11px;
+      color: #ccc;
+      letter-spacing: 0.5px;
+    }
+    .track-status.ok { color: #a8c5ac; }
+    .track-status.err { color: #e5a0a0; }
   </style>
 </head>
 <body>
-
 <div class="card" id="card">
   <div class="spinner"></div>
   <p style="color:var(--muted);font-size:14px;">Memuat…</p>
@@ -157,63 +155,58 @@
 
 <script>
 // ═══════════════════════════════════════════
-//  KONFIGURASI — tambah / edit layanan di sini
+//  KONFIGURASI
 // ═══════════════════════════════════════════
-const WA_NUMBER = "6285159601400";
+const WA_NUMBER  = "6285159601400";
+const API_BASE   = "https://lidan-co-id.pages.dev/api/contacts_filter_dinamis7";
+const API_TABLE  = "qr_kunjungan";
+const API_SECRET = "admin";
 
 const pages = {
   "konseling": {
-    icon: "🧠",
-    label: "Layanan Psikologi",
+    icon: "🧠", label: "Layanan Psikologi",
     title: "Konseling Psikologi",
     desc: "Butuh ruang aman untuk bercerita dan menemukan solusi? Kami siap mendampingi Anda.",
     pretext: "Halo, saya ingin mendaftar layanan Konseling Psikologi. Boleh saya tahu info lebih lanjut mengenai jadwal dan biaya sesi konseling?"
   },
   "tes": {
-    icon: "📋",
-    label: "Asesmen Psikologi",
+    icon: "📋", label: "Asesmen Psikologi",
     title: "Tes & Asesmen Psikologi",
     desc: "Kenali diri lebih dalam melalui tes psikologi terstandar dan laporan profesional.",
     pretext: "Halo, saya tertarik mengikuti Tes / Asesmen Psikologi. Mohon informasi mengenai jenis tes yang tersedia, prosedur, dan biayanya."
   },
   "seminar": {
-    icon: "🎓",
-    label: "Edukasi Psikologi",
+    icon: "🎓", label: "Edukasi Psikologi",
     title: "Seminar & Workshop",
     desc: "Ikuti seminar dan workshop psikologi bersama narasumber berpengalaman untuk pengembangan diri.",
-    pretext: "Halo, saya ingin mendapatkan informasi tentang Seminar / Workshop Psikologi yang tersedia. Boleh saya tahu jadwal dan cara pendaftarannya?"
+    pretext: "Halo, saya ingin mendapatkan informasi tentang Seminar / Workshop Psikologi. Boleh saya tahu jadwal dan cara pendaftarannya?"
   },
   "karir": {
-    icon: "💼",
-    label: "Pengembangan Diri",
+    icon: "💼", label: "Pengembangan Diri",
     title: "Konsultasi Karir & Minat Bakat",
     desc: "Temukan jalur karir yang sesuai dengan potensi dan kepribadian Anda bersama psikolog kami.",
     pretext: "Halo, saya ingin melakukan Konsultasi Karir dan Minat Bakat. Bisa tolong informasikan proses dan biayanya?"
   },
   "anak": {
-    icon: "🌱",
-    label: "Psikologi Anak",
+    icon: "🌱", label: "Psikologi Anak",
     title: "Konseling Anak & Remaja",
     desc: "Layanan khusus untuk tumbuh kembang, perilaku, dan kesejahteraan emosional anak dan remaja.",
     pretext: "Halo, saya ingin mendaftarkan anak/remaja untuk layanan Konseling Anak & Remaja. Mohon info jadwal dan prosedurnya."
   },
   "organisasi": {
-    icon: "🏢",
-    label: "Psikologi Industri",
+    icon: "🏢", label: "Psikologi Industri",
     title: "Psikologi Organisasi & SDM",
     desc: "Solusi psikologi untuk rekrutmen, pengembangan SDM, dan kesehatan mental karyawan perusahaan Anda.",
-    pretext: "Halo, saya tertarik dengan layanan Psikologi Organisasi / SDM untuk perusahaan kami. Boleh saya tahu lebih detail layanan yang ditawarkan?"
+    pretext: "Halo, saya tertarik dengan layanan Psikologi Organisasi / SDM untuk perusahaan kami. Boleh saya tahu detail layanannya?"
   },
   "trauma": {
-    icon: "💛",
-    label: "Pemulihan",
+    icon: "💛", label: "Pemulihan",
     title: "Konseling Trauma & Krisis",
     desc: "Dapatkan dukungan profesional untuk pemulihan dari peristiwa traumatik dan situasi krisis.",
     pretext: "Halo, saya membutuhkan informasi mengenai layanan Konseling Trauma & Krisis. Boleh saya hubungi psikolog untuk diskusi awal?"
   },
   "pasangan": {
-    icon: "❤️",
-    label: "Psikologi Relasi",
+    icon: "❤️", label: "Psikologi Relasi",
     title: "Konseling Pasangan & Keluarga",
     desc: "Perkuat hubungan dan komunikasi dalam rumah tangga bersama konselor keluarga profesional.",
     pretext: "Halo, kami ingin mengikuti Konseling Pasangan / Keluarga. Mohon informasi mengenai jadwal, proses, dan biayanya."
@@ -221,37 +214,139 @@ const pages = {
 };
 // ═══════════════════════════════════════════
 
-// Baca slug dari pathname: /konseling → "konseling"
+// ── Utilities ──
+function getOrCreateUUID() {
+  let uid = localStorage.getItem('_vid');
+  if (!uid) {
+    uid = 'v-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+    localStorage.setItem('_vid', uid);
+  }
+  return uid;
+}
+
+function todayStr() {
+  return new Date().toLocaleDateString('sv-SE'); // YYYY-MM-DD
+}
+
+function nowTimeStr() {
+  return new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+}
+
+function apiHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'X-Custom-Auth': API_SECRET
+  };
+}
+
+// ── Pencatatan Kunjungan ──
+async function recordVisit(slug, pageData) {
+  const uuid  = getOrCreateUUID();
+  const today = todayStr();
+  const now   = nowTimeStr();
+
+  try {
+    // Cek apakah UUID ini sudah punya record hari ini untuk slug ini
+    const checkUrl = `${API_BASE}?table=${API_TABLE}&x_01_eq=${encodeURIComponent(uuid)}&x_02_eq=${encodeURIComponent(slug)}&x_03_eq=${encodeURIComponent(today)}`;
+    const res = await fetch(checkUrl, { headers: apiHeaders() });
+    const json = await res.json();
+
+    if (json.success && json.data && json.data.length > 0) {
+      // Sudah ada record hari ini → update: jam terakhir + increment klik
+      const existing = json.data[0];
+      const clicks   = parseInt(existing.x_06 || '1') + 1;
+      await fetch(`${API_BASE}?table=${API_TABLE}&id_x=${existing.id_x}`, {
+        method: 'PUT',
+        headers: apiHeaders(),
+        body: JSON.stringify({
+          x_05: now,          // jam terakhir klik
+          x_06: String(clicks) // jumlah klik
+        })
+      });
+      return { action: 'updated', clicks };
+    } else {
+      // Belum ada → buat baru
+      await fetch(`${API_BASE}?table=${API_TABLE}`, {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify({
+          x_01: uuid,                         // UUID pengunjung
+          x_02: slug,                         // slug halaman
+          x_03: today,                        // tanggal
+          x_04: now,                          // jam pertama kunjungan
+          x_05: now,                          // jam terakhir klik (sama saat pertama)
+          x_06: '1',                          // jumlah klik
+          x_07: pageData.title,               // nama layanan
+          x_08: navigator.userAgent.slice(0, 200), // user agent (potong agar tidak terlalu panjang)
+          x_09: document.referrer || '-'      // referrer
+        })
+      });
+      return { action: 'created', clicks: 1 };
+    }
+  } catch (e) {
+    console.warn('Track error:', e);
+    return { action: 'error' };
+  }
+}
+
+// ── Render ──
 const slug = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
 const data = pages[slug];
 const card = document.getElementById('card');
 
 if (data) {
   const waLink = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(data.pretext)}`;
+  let sec = 3;
 
   card.innerHTML = `
     <div class="icon-wrap">${data.icon}</div>
     <div class="label">${data.label}</div>
     <h1>${data.title}</h1>
     <p class="desc">${data.desc}</p>
-    <a class="btn-wa" href="${waLink}" target="_blank" rel="noopener">
+    <button class="btn-wa" id="btnWa" onclick="goWa()">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
         <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
       </svg>
       Hubungi via WhatsApp
-    </a>
-    <p class="note">Anda akan diarahkan ke WhatsApp dalam 2 detik…</p>
+    </button>
+    <p class="note">Otomatis diarahkan dalam <span class="countdown" id="cd">3</span> detik…</p>
+    <span class="track-status" id="trackStatus">● mencatat kunjungan…</span>
   `;
 
-  // Auto redirect
-  setTimeout(() => { window.location.href = waLink; }, 2000);
+  // Catat kunjungan (tidak blokir UI)
+  recordVisit(slug, data).then(result => {
+    const el = document.getElementById('trackStatus');
+    if (!el) return;
+    if (result.action === 'error') {
+      el.textContent = '● gagal mencatat';
+      el.className = 'track-status err';
+    } else if (result.action === 'updated') {
+      el.textContent = `● kunjungan ke-${result.clicks} hari ini`;
+      el.className = 'track-status ok';
+    } else {
+      el.textContent = '● kunjungan tercatat';
+      el.className = 'track-status ok';
+    }
+  });
+
+  // Countdown & auto redirect
+  const cdEl = () => document.getElementById('cd');
+  const timer = setInterval(() => {
+    sec--;
+    if (cdEl()) cdEl().textContent = sec;
+    if (sec <= 0) { clearInterval(timer); goWa(); }
+  }, 1000);
+
+  window.goWa = function() {
+    window.open(waLink, '_blank');
+  };
 
 } else {
   card.classList.add('state-error');
   card.innerHTML = `
     <div class="icon-wrap">❓</div>
     <div class="label">Halaman Tidak Ditemukan</div>
-    <h1>URL "${slug || '/'}" tidak dikenal</h1>
+    <h1>URL "/${slug || ''}" tidak dikenal</h1>
     <p class="desc">Pilih layanan yang tersedia:</p>
     <div class="page-list">
       ${Object.keys(pages).map(k => `<a href="/${k}">/${k}</a>`).join('')}
@@ -259,6 +354,5 @@ if (data) {
   `;
 }
 </script>
-
 </body>
 </html>
